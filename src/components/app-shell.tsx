@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { Heart, House, LayoutGrid, RotateCcw, Shield, Users } from "lucide-react"
 import { toast } from "sonner"
-import { roleLabel } from "@/lib/catalog"
+import { isPeopleTeam, roleLabel } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import { Logo } from "@/components/brand"
 import { buttonVariants } from "@/components/ui/button"
@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {item.label}
               </Link>
             ))}
-            {user.role === "hr" ? (
+            {isPeopleTeam(user.role) ? (
               <Link
                 href="/admin"
                 aria-current={active(pathname, "/admin") ? "page" : undefined}
@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ) : null}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            {user.role === "hr" ? (
+            {isPeopleTeam(user.role) ? (
               <Link href="/admin" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-9 md:hidden")}>
                 <Shield className="size-4" />
                 管理
@@ -113,7 +113,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push("/saved")}>我的收藏</DropdownMenuItem>
-                {user.role === "hr" ? <DropdownMenuItem onClick={() => router.push("/admin")}>人事部管理</DropdownMenuItem> : null}
+                {isPeopleTeam(user.role) ? <DropdownMenuItem onClick={() => router.push("/admin")}>人事部管理</DropdownMenuItem> : null}
                 <DropdownMenuItem
                   onClick={() => {
                     resetDemo()

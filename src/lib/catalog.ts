@@ -5,7 +5,9 @@ import type {
   Offer,
   OfferDraft,
   OfferTag,
+  OfferView,
   Persisted,
+  ReviewStatus,
   Role,
   Signup,
   User,
@@ -28,6 +30,11 @@ export function asOfferDraft(offer: Offer): OfferDraft {
     validUntil: offer.validUntil,
     tags: offer.tags,
     published: offer.published,
+    reviewStatus: offer.reviewStatus,
+    submittedById: offer.submittedById,
+    submittedByName: offer.submittedByName,
+    reviewNote: offer.reviewNote,
+    reviewedAt: offer.reviewedAt,
   }
 }
 
@@ -61,9 +68,17 @@ export const USERS: User[] = [
     id: "hr-lee",
     name: "李慧敏",
     dept: "人事部",
-    title: "主任",
+    title: "專員",
     role: "hr",
     email: "lee.waiman@staff.example",
+  },
+  {
+    id: "hr-ho",
+    name: "何嘉慧",
+    dept: "人事部",
+    title: "主管",
+    role: "supervisor",
+    email: "ho.kawai@staff.example",
   },
 ]
 
@@ -78,7 +93,7 @@ export const CATEGORIES: { id: CategoryId; name: string; blurb: string }[] = [
 
 export type OfferTagFilter = "all" | "new" | "limited" | "ending"
 export type OfferSort = "new" | "ending" | "merchant"
-export type OfferPhase = "live" | "upcoming" | "expired" | "draft"
+export type OfferPhase = "live" | "upcoming" | "expired" | "draft" | "pending" | "returned"
 export type GroupPhase = "open" | "reached" | "success" | "cancelled"
 
 export const OFFER_PHASE_LABEL: Record<OfferPhase, string> = {
@@ -86,6 +101,8 @@ export const OFFER_PHASE_LABEL: Record<OfferPhase, string> = {
   upcoming: "即將開始",
   expired: "已過期",
   draft: "草案",
+  pending: "待審核",
+  returned: "退回修改",
 }
 
 export const GROUP_PHASE_LABEL: Record<GroupPhase, string> = {
@@ -111,7 +128,13 @@ export function isCategoryId(id: string): id is CategoryId {
 }
 
 export function roleLabel(role: Role) {
-  return role === "hr" ? "人事部" : "一般員工"
+  if (role === "supervisor") return "人事主管"
+  if (role === "hr") return "人事專員"
+  return "一般員工"
+}
+
+export function isPeopleTeam(role: Role) {
+  return role === "hr" || role === "supervisor"
 }
 
 export function todayHK(now = new Date()) {
@@ -188,14 +211,72 @@ export function fromDatetimeLocal(value: string) {
 }
 
 export function offerPhase(offer: Offer, today = todayHK()): OfferPhase {
-  if (!offer.published) return "draft"
+  if (offer.reviewStatus === "pending") return "pending"
+  if (offer.reviewStatus === "returned") return "returned"
+  if (offer.reviewStatus !== "approved" || !offer.published) return "draft"
   if (offer.validUntil < today) return "expired"
   if (offer.validFrom > today) return "upcoming"
   return "live"
 }
 
 export function isStaffVisible(offer: Offer, today = todayHK()) {
-  return offer.published && offer.validUntil >= today
+  return offer.reviewStatus === "approved" && offer.published && offer.validUntil >= today
+}
+
+export function approveOffer(offer: Offer, at: string): Offer {
+  return { ...offer, reviewStatus: "approved", published: true, reviewedAt: at, reviewNote: "", updatedAt: at }
+}
+
+export function returnOffer(offer: Offer, note: string, at: string): Offer {
+  return {
+    ...offer,
+    reviewStatus: "returned",
+    published: false,
+    reviewNote: note.trim(),
+    reviewedAt: at,
+    updatedAt: at,
+  }
+}
+
+export function categoryPopularity(offers: Offer[], views: OfferView[], today = todayHK()) {
+  const recentStart = addDays(today, -29)
+  const previousStart = addDays(today, -59)
+  const previousEnd = addDays(today, -30)
+  const offerById = new Map(offers.map((offer) => [offer.id, offer]))
+  const inWindow = (view: OfferView, start: string, end: string) => {
+    const day = view.at.slice(0, 10)
+    return day >= start && day <= end && offerById.has(view.offerId)
+  }
+  const recent = views.filter((view) => inWindow(view, recentStart, today))
+  const previous = views.filter((view) => inWindow(view, previousStart, previousEnd))
+  const counts = new Map<CategoryId, number>()
+  const offerCounts = new Map<string, number>()
+  for (const view of recent) {
+    const offer = offerById.get(view.offerId)
+    if (!offer) continue
+    counts.set(offer.category, (counts.get(offer.category) ?? 0) + 1)
+    offerCounts.set(offer.id, (offerCounts.get(offer.id) ?? 0) + 1)
+  }
+  const total = recent.length
+  const byCategory = CATEGORIES.map((category) => {
+    const clicks = counts.get(category.id) ?? 0
+    return {
+      id: category.id,
+      name: category.name,
+      clicks,
+      share: total === 0 ? 0 : Math.round((clicks / total) * 100),
+    }
+  }).sort((a, b) => b.clicks - a.clicks || a.name.localeCompare(b.name, "zh-HK"))
+  const topOffers = [...offerCounts.entries()]
+    .map(([id, clicks]) => {
+      const offer = offerById.get(id)
+      return offer ? { id, title: offer.title, category: offer.category, clicks } : null
+    })
+    .filter((item): item is { id: string; title: string; category: CategoryId; clicks: number } => item != null)
+    .sort((a, b) => b.clicks - a.clicks)
+    .slice(0, 5)
+  const change = previous.length === 0 ? null : Math.round(((recent.length - previous.length) / previous.length) * 100)
+  return { byCategory, total, previous: previous.length, change, leader: byCategory[0] ?? null, topOffers }
 }
 
 export function isEndingSoon(offer: Offer, today = todayHK()) {
@@ -320,7 +401,9 @@ function person(userId: string, name: string, dept: string, qty: number, at: str
   return { userId, name, dept, qty, at }
 }
 
-const OFFERS: Offer[] = [
+type OfferSeed = Omit<Offer, "reviewStatus" | "submittedById" | "submittedByName" | "reviewNote" | "reviewedAt">
+
+const OFFERS: OfferSeed[] = [
   {
     id: "off-check",
     title: "全身檢查員工價八折",
@@ -762,12 +845,71 @@ const GROUPS: GroupBuy[] = [
   },
 ]
 
-export function createSeed(): Persisted {
+const PENDING_OFFERS = new Set(["off-fair", "off-gym"])
+
+const VIEW_WEIGHTS: [string, number][] = [
+  ["off-greens", 42],
+  ["off-coffee", 36],
+  ["off-mart", 28],
+  ["off-check", 22],
+  ["off-cinema", 18],
+  ["off-hotel", 14],
+  ["off-buffet", 11],
+  ["off-dental", 10],
+  ["off-optical", 8],
+  ["off-ferry", 7],
+  ["off-taxi", 6],
+  ["off-home", 5],
+  ["off-laundry", 4],
+  ["off-parking", 3],
+]
+
+function finishOffer(offer: OfferSeed): Offer {
+  const reviewStatus: ReviewStatus = PENDING_OFFERS.has(offer.id) ? "pending" : offer.id === "off-draft" ? "returned" : offer.published ? "approved" : "draft"
   return {
-    version: 1,
+    ...offer,
+    tags: [...offer.tags],
+    published: reviewStatus === "approved",
+    reviewStatus,
+    submittedById: "hr-lee",
+    submittedByName: "李慧敏",
+    reviewNote: reviewStatus === "returned" ? "請先向中心確認週六價錢，再重新提交。" : "",
+    reviewedAt: reviewStatus === "approved" ? offer.updatedAt : "",
+  }
+}
+
+function buildViews(today: string): OfferView[] {
+  const views: OfferView[] = []
+  let index = 0
+  for (const [offerId, count] of VIEW_WEIGHTS) {
+    for (let i = 0; i < count; i++) {
+      const hour = String((i % 8) + 9).padStart(2, "0")
+      views.push({
+        offerId,
+        userId: `viewer-${index}`,
+        at: `${addDays(today, -(i % 28))}T${hour}:15:00+08:00`,
+      })
+      index += 1
+    }
+  }
+  for (let i = 0; i < 191; i++) {
+    views.push({
+      offerId: i % 3 === 0 ? "off-ferry" : "off-check",
+      userId: `earlier-${i}`,
+      at: `${addDays(today, -(31 + (i % 25)))}T10:15:00+08:00`,
+    })
+  }
+  return views
+}
+
+export function createSeed(): Persisted {
+  const today = todayHK()
+  return {
+    version: 2,
     userId: null,
-    offers: OFFERS.map((offer) => ({ ...offer, tags: [...offer.tags] })),
+    offers: OFFERS.map(finishOffer),
     groups: GROUPS.map((group) => ({ ...group, signups: group.signups.map((signup) => ({ ...signup })) })),
+    views: buildViews(today),
     savedByUser: { "emp-chan": ["off-hotel", "off-cinema"] },
   }
 }

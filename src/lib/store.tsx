@@ -1,22 +1,25 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
-import { createSeed, isGroupOpen, maxQtyFor, USERS } from "@/lib/catalog"
-import type { GroupDraft, OfferDraft, Persisted } from "@/lib/types"
+import { approveOffer, createSeed, isGroupOpen, maxQtyFor, returnOffer, todayHK, USERS } from "@/lib/catalog"
+import type { GroupDraft, OfferDraft, OfferView, Persisted } from "@/lib/types"
 
-const STORAGE_KEY = "staff-benefits-demo-v1"
+const STORAGE_KEY = "staff-benefits-demo-v2"
 
 type Store = {
   ready: boolean
   user: (typeof USERS)[number] | null
   offers: Persisted["offers"]
   groups: Persisted["groups"]
+  views: Persisted["views"]
   savedIds: string[]
   login: (id: string) => void
   logout: () => void
   toggleSaved: (offerId: string) => void
   setSignup: (groupId: string, qty: number) => { ok: boolean; message: string }
   saveOffer: (draft: OfferDraft) => void
+  decideOffer: (id: string, decision: "approve" | "return", note?: string) => void
+  recordView: (offerId: string) => void
   deleteOffer: (id: string) => void
   saveGroup: (draft: GroupDraft) => void
   deleteGroup: (id: string) => void
@@ -28,15 +31,18 @@ const StoreContext = createContext<Store | null>(null)
 function sanitize(value: unknown): Persisted | null {
   if (!value || typeof value !== "object") return null
   const raw = value as Partial<Persisted>
-  if (raw.version !== 1 || !Array.isArray(raw.offers) || !Array.isArray(raw.groups)) return null
+  if (raw.version !== 2 || !Array.isArray(raw.offers) || !Array.isArray(raw.groups) || !Array.isArray(raw.views)) return null
+  const offersOk = raw.offers.every((offer) => offer && typeof offer.reviewStatus === "string" && typeof offer.id === "string")
+  if (!offersOk) return null
   const userId = typeof raw.userId === "string" && USERS.some((user) => user.id === raw.userId) ? raw.userId : null
   const savedByUser =
     raw.savedByUser && typeof raw.savedByUser === "object" ? (raw.savedByUser as Record<string, string[]>) : {}
   return {
-    version: 1,
+    version: 2,
     userId,
     offers: raw.offers,
     groups: raw.groups,
+    views: raw.views.filter((view): view is OfferView => !!view && typeof view.offerId === "string" && typeof view.at === "string"),
     savedByUser,
   }
 }
@@ -67,6 +73,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       user,
       offers: state.offers,
       groups: state.groups,
+      views: state.views,
       savedIds: user ? state.savedByUser[user.id] ?? [] : [],
       login: (id) => {
         if (!USERS.some((item) => item.id === id)) return
@@ -113,6 +120,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             ...current,
             offers: exists ? current.offers.map((offer) => (offer.id === draft.id ? next : offer)) : [next, ...current.offers],
           }
+        }),
+      decideOffer: (id, decision, note) =>
+        setState((current) => {
+          const at = new Date().toISOString()
+          return {
+            ...current,
+            offers: current.offers.map((offer) => {
+              if (offer.id !== id) return offer
+              return decision === "approve" ? approveOffer(offer, at) : returnOffer(offer, note ?? "", at)
+            }),
+          }
+        }),
+      recordView: (offerId) =>
+        setState((current) => {
+          const viewer = USERS.find((item) => item.id === current.userId)
+          if (!viewer || viewer.role !== "employee") return current
+          if (!current.offers.some((offer) => offer.id === offerId)) return current
+          const day = todayHK()
+          const seen = current.views.some((view) => view.offerId === offerId && view.userId === viewer.id && view.at.slice(0, 10) === day)
+          if (seen) return current
+          return { ...current, views: [...current.views, { offerId, userId: viewer.id, at: new Date().toISOString() }] }
         }),
       deleteOffer: (id) =>
         setState((current) => ({

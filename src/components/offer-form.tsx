@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
-import { addDays, CATEGORIES, hasErrors, isCategoryId, todayHK, toggleTag, validateOffer } from "@/lib/catalog"
+import { addDays, CATEGORIES, hasErrors, isCategoryId, isPeopleTeam, todayHK, toggleTag, validateOffer } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import type { CategoryId, Offer, OfferTag } from "@/lib/types"
 import { ConfirmDialog } from "@/components/confirm-dialog"
@@ -21,7 +21,7 @@ const categoryItems = Object.fromEntries(CATEGORIES.map((category) => [category.
 export function OfferEditor({ id }: { id?: string }) {
   const { user, offers } = useStore()
   if (!user) return null
-  if (user.role !== "hr") return <StaffBlocked />
+  if (!isPeopleTeam(user.role)) return <StaffBlocked />
   const existing = id ? offers.find((offer) => offer.id === id) : undefined
   if (id && !existing) {
     return (
@@ -37,7 +37,7 @@ export function OfferEditor({ id }: { id?: string }) {
 }
 
 function OfferForm({ initial }: { initial?: Offer }) {
-  const { saveOffer, deleteOffer } = useStore()
+  const { user, saveOffer, deleteOffer } = useStore()
   const router = useRouter()
   const today = todayHK()
   const [title, setTitle] = useState(initial?.title ?? "")
@@ -53,7 +53,6 @@ function OfferForm({ initial }: { initial?: Offer }) {
   const [validFrom, setValidFrom] = useState(initial?.validFrom ?? today)
   const [validUntil, setValidUntil] = useState(initial?.validUntil ?? addDays(today, 90))
   const [tags, setTags] = useState<OfferTag[]>(initial?.tags ?? [])
-  const [published, setPublished] = useState(initial?.published ?? true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [confirming, setConfirming] = useState(false)
 
@@ -61,8 +60,13 @@ function OfferForm({ initial }: { initial?: Offer }) {
     return errors[field] ? `${field}-error` : undefined
   }
 
-  function onSubmit(event: React.FormEvent) {
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!user) return
+    const submitter = (event.nativeEvent as SubmitEvent).submitter
+    const intent = submitter instanceof HTMLButtonElement ? submitter.dataset.intent : "pending"
+    const keeping = intent === "keep"
+    const reviewStatus = keeping ? initial?.reviewStatus ?? "draft" : intent === "draft" ? "draft" : "pending"
     const draft = {
       id: initial?.id ?? `off-${crypto.randomUUID().slice(0, 8)}`,
       title,
@@ -78,7 +82,12 @@ function OfferForm({ initial }: { initial?: Offer }) {
       validFrom,
       validUntil,
       tags,
-      published,
+      published: keeping ? initial?.published ?? false : false,
+      reviewStatus,
+      submittedById: initial?.submittedById ?? user.id,
+      submittedByName: initial?.submittedByName ?? user.name,
+      reviewNote: reviewStatus === "pending" ? "" : initial?.reviewNote ?? "",
+      reviewedAt: keeping ? initial?.reviewedAt ?? "" : "",
     }
     const nextErrors = validateOffer(draft)
     setErrors(nextErrors)
@@ -87,31 +96,25 @@ function OfferForm({ initial }: { initial?: Offer }) {
       return
     }
     saveOffer(draft)
-    toast.success(published ? "已上架，同事可以查看" : "已儲存為草案")
-    router.push(`/offers/${draft.id}`)
+    toast.success(keeping ? "已儲存" : reviewStatus === "pending" ? "已提交審核，主管批准後才會出現在員工首頁" : "已儲存為草案，尚未提交審核")
+    router.push("/admin")
   }
 
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
       <PageHeader
         title={initial ? "編輯優惠" : "上載優惠"}
-        description="同事只會看到已上架、而且未過期的項目。"
+        description={user?.role === "supervisor" ? "主管可以改內容。上架與否仍以審核決定。" : "提交後進入主管的待審核列表。批准之前，員工首頁看不到。"}
         actions={
           <Link href="/admin" className={cn(buttonVariants({ variant: "outline" }), "h-10 px-4")}>
             返回管理
           </Link>
         }
       />
+      {initial?.reviewStatus === "returned" && initial.reviewNote ? (
+        <p className="rounded-2xl bg-orange-50 px-4 py-3 text-sm leading-6 text-orange-900">主管退回：{initial.reviewNote}</p>
+      ) : null}
       <div className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-foreground/10 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <ToggleRow
-            id="published"
-            checked={published}
-            onChange={setPublished}
-            title="上架給同事查看"
-            body="關閉則只保留在人事部後台，作為草案。"
-          />
-        </div>
         <Field id="title" label="優惠名稱" error={errors.title}>
           <Input id="title" value={title} onChange={(event) => setTitle(event.target.value)} aria-invalid={!!errors.title} aria-describedby={described("title")} className="h-11" />
         </Field>
@@ -182,9 +185,20 @@ function OfferForm({ initial }: { initial?: Offer }) {
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" className="h-11 px-5">
-          {published ? "儲存並上架" : "儲存草案"}
-        </Button>
+        {user?.role === "supervisor" ? (
+          <Button type="submit" data-intent="keep" className="h-11 px-5">
+            儲存
+          </Button>
+        ) : (
+          <>
+            <Button type="submit" data-intent="pending" className="h-11 px-5">
+              提交審核
+            </Button>
+            <Button type="submit" data-intent="draft" variant="outline" className="h-11 px-5">
+              儲存草案
+            </Button>
+          </>
+        )}
         {initial ? (
           <Button type="button" variant="destructive" className="h-11" onClick={() => setConfirming(true)}>
             刪除

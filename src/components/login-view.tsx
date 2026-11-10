@@ -1,6 +1,6 @@
 "use client"
 
-import { ShieldCheck, UserRound } from "lucide-react"
+import { BadgeCheck, ShieldCheck, UserRound } from "lucide-react"
 import { roleLabel, USERS } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import { Logo } from "@/components/brand"
@@ -41,12 +41,17 @@ export function LoginView() {
         <div className="mx-auto w-full max-w-md">
           <h2 className="text-2xl font-bold text-[#065f46]">選擇身份進入</h2>
           <p className="mt-2 text-pretty text-sm leading-6 text-muted-foreground">
-            正式版本會連接公司帳號。這個示範可以直接進入員工或人事部。
+            正式版本會連接公司帳號。這個示範可以直接進入員工、人事專員或人事主管。
           </p>
           <div className="mt-6 grid gap-3">
             {USERS.map((person) => {
-              const hr = person.role === "hr"
-              const Icon = hr ? ShieldCheck : UserRound
+              const Icon = person.role === "supervisor" ? BadgeCheck : person.role === "hr" ? ShieldCheck : UserRound
+              const note =
+                person.role === "supervisor"
+                  ? "可批准上架，並查看哪類優惠最受歡迎。"
+                  : person.role === "hr"
+                    ? "可上載優惠並提交主管審核，不能直接上架。"
+                    : "可瀏覽、搜尋、收藏，以及報名團購。不能自行上載。"
               return (
                 <button
                   key={person.id}
@@ -60,14 +65,12 @@ export function LoginView() {
                   <span className="min-w-0">
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="text-base font-bold">{person.name}</span>
-                      <Badge variant={hr ? "default" : "secondary"}>{roleLabel(person.role)}</Badge>
+                      <Badge variant={person.role === "employee" ? "secondary" : "default"}>{roleLabel(person.role)}</Badge>
                     </span>
                     <span className="mt-1 block text-sm text-muted-foreground">
                       {person.dept} · {person.title}
                     </span>
-                    <span className="mt-2 block text-sm leading-6 text-slate-600">
-                      {hr ? "可上載、審核、上架和下架優惠及團購。" : "可瀏覽、搜尋、收藏，以及報名團購。不能自行上載。"}
-                    </span>
+                    <span className="mt-2 block text-sm leading-6 text-slate-600">{note}</span>
                   </span>
                 </button>
               )

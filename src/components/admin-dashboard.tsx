@@ -5,7 +5,6 @@ import { useState } from "react"
 import { toast } from "sonner"
 import {
   asGroupDraft,
-  asOfferDraft,
   categoryById,
   formatDay,
   formatWhen,
@@ -17,7 +16,8 @@ import {
   type OfferPhase,
 } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
-import type { GroupBuy, Offer } from "@/lib/types"
+import type { GroupBuy } from "@/lib/types"
+import { SupervisorDesk } from "@/components/supervisor-desk"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader, StaffBlocked } from "@/components/states"
 import { Badge } from "@/components/ui/badge"
@@ -29,6 +29,8 @@ type OfferFilter = "all" | OfferPhase
 
 const FILTERS: { id: OfferFilter; label: string }[] = [
   { id: "all", label: "全部" },
+  { id: "pending", label: "待審核" },
+  { id: "returned", label: "已退回" },
   { id: "live", label: "上架中" },
   { id: "upcoming", label: "即將開始" },
   { id: "draft", label: "草案" },
@@ -36,24 +38,20 @@ const FILTERS: { id: OfferFilter; label: string }[] = [
 ]
 
 export function AdminDashboard() {
-  const { user, offers, groups, saveOffer, deleteOffer, saveGroup, deleteGroup } = useStore()
+  const { user, offers, groups, deleteOffer, saveGroup, deleteGroup } = useStore()
   const [filter, setFilter] = useState<OfferFilter>("all")
   const [section, setSection] = useState<"offers" | "groups">("offers")
   const [pending, setPending] = useState<{ kind: "offer" | "group"; id: string; title: string } | null>(null)
   if (!user) return null
+  if (user.role === "supervisor") return <SupervisorDesk />
   if (user.role !== "hr") return <StaffBlocked />
 
   const visibleOffers = offers.filter((offer) => filter === "all" || offerPhase(offer) === filter)
   const counts = {
+    pending: offers.filter((offer) => offer.reviewStatus === "pending").length,
+    returned: offers.filter((offer) => offer.reviewStatus === "returned").length,
     live: offers.filter((offer) => offerPhase(offer) === "live").length,
-    draft: offers.filter((offer) => !offer.published).length,
-    expired: offers.filter((offer) => offerPhase(offer) === "expired").length,
     groups: groups.filter((group) => group.published && ["open", "reached"].includes(groupStatus(group))).length,
-  }
-
-  function toggleOffer(offer: Offer) {
-    saveOffer({ ...asOfferDraft(offer), published: !offer.published })
-    toast.success(offer.published ? "已下架" : "已上架")
   }
 
   function toggleGroup(group: GroupBuy) {
@@ -64,8 +62,8 @@ export function AdminDashboard() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        title="人事部管理"
-        description="上載、審核和維護優惠及團購。一般員工不能在這裡改內容。"
+        title="專員工作台"
+        description="上載優惠後會交給主管審核。批准之前，員工首頁看不到這項優惠。"
         actions={
           <>
             <Link href="/admin/offers/new" className={cn(buttonVariants(), "h-10 px-4")}>
@@ -78,9 +76,9 @@ export function AdminDashboard() {
         }
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="待主管審核" value={counts.pending} />
+        <Stat label="已退回" value={counts.returned} />
         <Stat label="上架中" value={counts.live} />
-        <Stat label="草案" value={counts.draft} />
-        <Stat label="已過期" value={counts.expired} />
         <Stat label="進行中團購" value={counts.groups} />
       </div>
       <div className="flex gap-2">
@@ -120,18 +118,16 @@ export function AdminDashboard() {
                       <Link href={`/offers/${offer.id}`} className="font-bold hover:underline">
                         {offer.title}
                       </Link>
-                      <Badge variant={phase === "expired" ? "destructive" : phase === "draft" ? "secondary" : "outline"}>
+                      <Badge variant={phase === "expired" ? "destructive" : phase === "pending" || phase === "returned" ? "secondary" : "outline"}>
                         {OFFER_PHASE_LABEL[phase]}
                       </Badge>
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {offer.merchant} · {categoryById(offer.category)?.name} · {formatDay(offer.validFrom)} 至 {formatDay(offer.validUntil)}
+                      {offer.reviewNote ? ` · 主管：${offer.reviewNote}` : ""}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={() => toggleOffer(offer)}>
-                      {offer.published ? "下架" : "上架"}
-                    </Button>
                     <Link href={`/admin/offers/${offer.id}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                       編輯
                     </Link>

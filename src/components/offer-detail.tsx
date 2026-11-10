@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Clock, Copy, Heart, Lock, SearchX } from "lucide-react"
 import { toast } from "sonner"
-import { categoryById, formatDay, isStaffVisible, offerPhase, OFFER_PHASE_LABEL, queryOffers } from "@/lib/catalog"
+import { categoryById, formatDay, isPeopleTeam, isStaffVisible, offerPhase, OFFER_PHASE_LABEL, queryOffers } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import { OfferCard, OfferTags, useSavedToggle } from "@/components/offer-card"
 import { EmptyState } from "@/components/states"
@@ -13,10 +14,14 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export function OfferDetail({ id }: { id: string }) {
-  const { user, offers } = useStore()
+  const { user, offers, recordView } = useStore()
   const router = useRouter()
   const offer = offers.find((item) => item.id === id)
   const { saved, toggle } = useSavedToggle(id)
+
+  useEffect(() => {
+    if (user?.role === "employee" && offer && isStaffVisible(offer)) recordView(offer.id)
+  }, [user?.role, offer, recordView])
 
   if (!user) return null
   if (!offer) {
@@ -35,7 +40,7 @@ export function OfferDetail({ id }: { id: string }) {
   }
 
   const staffCanSee = isStaffVisible(offer)
-  if (!staffCanSee && user.role !== "hr") {
+  if (!staffCanSee && !isPeopleTeam(user.role)) {
     const expired = offerPhase(offer) === "expired"
     return (
       <EmptyState
@@ -107,7 +112,7 @@ export function OfferDetail({ id }: { id: string }) {
               <Heart className={cn(saved && "fill-current")} />
               {saved ? "已收藏" : "收藏這項優惠"}
             </Button>
-            {user.role === "hr" ? (
+            {isPeopleTeam(user.role) ? (
               <Link href={`/admin/offers/${offer.id}`} className={cn(buttonVariants({ variant: "outline" }), "mt-3 h-10 w-full")}>
                 編輯
               </Link>

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Heart } from "lucide-react"
-import { isStaffVisible } from "@/lib/catalog"
+import { isPeopleTeam, isStaffVisible } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import { OfferCard } from "@/components/offer-card"
 import { EmptyState, PageHeader } from "@/components/states"
@@ -14,7 +14,7 @@ export function SavedView() {
   if (!user) return null
   const saved = savedIds
     .map((id) => offers.find((offer) => offer.id === id))
-    .filter((offer) => offer && (user.role === "hr" || isStaffVisible(offer)))
+    .filter((offer) => offer && (isPeopleTeam(user.role) || isStaffVisible(offer)))
   const hidden = savedIds.length - saved.length
 
   return (

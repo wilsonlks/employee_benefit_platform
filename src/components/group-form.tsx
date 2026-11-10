@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
-import { addDays, fromDatetimeLocal, hasErrors, todayHK, toDatetimeLocal, validateGroup } from "@/lib/catalog"
+import { addDays, fromDatetimeLocal, hasErrors, isPeopleTeam, todayHK, toDatetimeLocal, validateGroup } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import type { GroupBuy } from "@/lib/types"
 import { ConfirmDialog } from "@/components/confirm-dialog"
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 export function GroupEditor({ id }: { id?: string }) {
   const { user, groups } = useStore()
   if (!user) return null
-  if (user.role !== "hr") return <StaffBlocked />
+  if (!isPeopleTeam(user.role)) return <StaffBlocked />
   const existing = id ? groups.find((group) => group.id === id) : undefined
   if (id && !existing) {
     return (

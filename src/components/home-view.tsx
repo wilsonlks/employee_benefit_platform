@@ -26,7 +26,8 @@ export function HomeView() {
   const activeGroups = groups
     .filter((group) => group.published && ["open", "reached"].includes(groupStatus(group)))
     .sort((a, b) => a.deadline.localeCompare(b.deadline))
-  const drafts = offers.filter((offer) => !offer.published).length + groups.filter((group) => !group.published).length
+  const pendingReview = offers.filter((offer) => offer.reviewStatus === "pending").length
+  const returned = offers.filter((offer) => offer.reviewStatus === "returned").length
 
   return (
     <div className="grid gap-8">
@@ -50,9 +51,16 @@ export function HomeView() {
             搜尋
           </Button>
         </form>
-        {user.role === "hr" && drafts > 0 ? (
+        {user.role === "supervisor" && pendingReview > 0 ? (
           <Link href="/admin" className="mt-4 inline-flex text-sm font-medium text-[#065f46] underline-offset-4 hover:underline">
-            有 {drafts} 項草案未上架，去審核
+            有 {pendingReview} 項優惠待審核，批准後會出現在員工首頁
+          </Link>
+        ) : null}
+        {user.role === "hr" && (pendingReview > 0 || returned > 0) ? (
+          <Link href="/admin" className="mt-4 inline-flex text-sm font-medium text-[#065f46] underline-offset-4 hover:underline">
+            {pendingReview > 0 ? `${pendingReview} 項待主管審核` : ""}
+            {pendingReview > 0 && returned > 0 ? "，" : ""}
+            {returned > 0 ? `${returned} 項已退回，可以修改後再交` : ""}
           </Link>
         ) : null}
       </section>

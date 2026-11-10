@@ -7,7 +7,8 @@ export type CategoryId =
   | "leisure"
 
 export type OfferTag = "new" | "limited"
-export type Role = "employee" | "hr"
+export type Role = "employee" | "hr" | "supervisor"
+export type ReviewStatus = "draft" | "pending" | "returned" | "approved"
 
 export type User = {
   id: string
@@ -34,7 +35,18 @@ export type Offer = {
   validUntil: string
   tags: OfferTag[]
   published: boolean
+  reviewStatus: ReviewStatus
+  submittedById: string
+  submittedByName: string
+  reviewNote: string
+  reviewedAt: string
   updatedAt: string
+}
+
+export type OfferView = {
+  offerId: string
+  userId: string
+  at: string
 }
 
 export type Signup = {
@@ -63,10 +75,11 @@ export type GroupBuy = {
 }
 
 export type Persisted = {
-  version: 1
+  version: 2
   userId: string | null
   offers: Offer[]
   groups: GroupBuy[]
+  views: OfferView[]
   savedByUser: Record<string, string[]>
 }
 

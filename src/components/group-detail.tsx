@@ -11,6 +11,7 @@ import {
   GROUP_PHASE_NOTE,
   groupStatus,
   isGroupOpen,
+  isPeopleTeam,
   maxQtyFor,
   signupQty,
 } from "@/lib/catalog"
@@ -46,7 +47,7 @@ export function GroupDetail({ id }: { id: string }) {
       />
     )
   }
-  if (!group.published && user.role !== "hr") {
+  if (!group.published && !isPeopleTeam(user.role)) {
     return (
       <EmptyState
         icon={Lock}
@@ -96,7 +97,7 @@ export function GroupDetail({ id }: { id: string }) {
           <p className="mt-2 text-sm leading-7 text-slate-700">{group.detail}</p>
           <p className="mt-4 text-sm text-muted-foreground">{GROUP_PHASE_NOTE[phase]}</p>
         </section>
-        {user.role === "hr" ? (
+        {isPeopleTeam(user.role) ? (
           <section className="rounded-2xl bg-white p-5 ring-1 ring-foreground/10">
             <h2 className="text-lg font-bold">報名名單</h2>
             <p className="mt-1 text-sm text-muted-foreground">同事只看到總數，看不到個別姓名。</p>
@@ -205,7 +206,7 @@ export function GroupDetail({ id }: { id: string }) {
             {GROUP_PHASE_NOTE[phase]}
           </p>
         )}
-        {user.role === "hr" ? (
+        {isPeopleTeam(user.role) ? (
           <Link href={`/admin/groups/${group.id}`} className={cn(buttonVariants({ variant: "outline" }), "mt-4 h-10 w-full")}>
             編輯團購
           </Link>

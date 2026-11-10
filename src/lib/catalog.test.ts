@@ -1,8 +1,11 @@
 import assert from "node:assert/strict"
 import {
   addDays,
+  approveOffer,
+  categoryPopularity,
   createSeed,
   groupStatus,
+  isStaffVisible,
   maxQtyFor,
   queryOffers,
   signupQty,
@@ -34,14 +37,29 @@ assert.equal(maxQtyFor(xmas, "emp-chan"), 3)
 assert.equal(maxQtyFor(trip, "emp-chan"), 2)
 
 const visible = queryOffers(seed.offers, { staffOnly: true, today })
-assert.equal(visible.length, 16)
-assert.equal(visible.some((offer) => offer.id === "off-draft" || offer.id === "off-expired"), false)
+assert.equal(visible.length, 14)
+assert.equal(visible.some((offer) => offer.id === "off-draft" || offer.id === "off-expired" || offer.id === "off-fair" || offer.id === "off-gym"), false)
 assert.deepEqual(
   queryOffers(seed.offers, { staffOnly: true, today, tag: "ending" }).map((offer) => offer.id).sort(),
   ["off-cinema", "off-coffee"],
 )
 assert.equal(queryOffers(seed.offers, { staffOnly: true, today, q: "洗牙" })[0]?.id, "off-dental")
-assert.equal(queryOffers(seed.offers, { staffOnly: true, today, category: "leisure" }).length, 2)
+assert.equal(queryOffers(seed.offers, { staffOnly: true, today, category: "leisure" }).length, 1)
+
+const fair = seed.offers.find((offer) => offer.id === "off-fair")
+const gym = seed.offers.find((offer) => offer.id === "off-gym")
+assert.ok(fair && gym)
+assert.equal(fair.reviewStatus, "pending")
+assert.equal(gym.reviewStatus, "pending")
+assert.equal(isStaffVisible(fair, today), false)
+const publishedFair = approveOffer(fair, "2026-11-06T08:00:00+08:00")
+assert.equal(publishedFair.published, true)
+assert.equal(isStaffVisible(publishedFair, today), true)
+
+const popularity = categoryPopularity(seed.offers, seed.views, todayHK())
+assert.equal(popularity.leader?.id, "food")
+assert.equal(popularity.change, 12)
+assert.ok(popularity.total > popularity.byCategory[1].clicks)
 
 const invalid = validateOffer({ ...seed.offers[0], title: "  ", validUntil: "2020-01-01" })
 assert.equal(invalid.title, "請填寫優惠名稱")

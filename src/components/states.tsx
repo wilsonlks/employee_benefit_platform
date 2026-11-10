@@ -53,7 +53,7 @@ export function StaffBlocked() {
     <EmptyState
       icon={Shield}
       title="只供人事部使用"
-      body="一般員工可以瀏覽、收藏和報名。上載、審核和維護由人事部負責。"
+      body="一般員工可以瀏覽、收藏和報名。專員負責上載，主管負責批准上架。"
       action={
         <Link href="/" className={cn(buttonVariants(), "h-10 px-4")}>
           返回主頁
