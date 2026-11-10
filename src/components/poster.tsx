@@ -18,15 +18,6 @@ export function Poster({ src, alt, framed = true }: { src: string; alt: string; 
   )
 }
 
-export function PosterThumb({ src }: { src: string }) {
-  if (!src) return null
-  return (
-    // User posters are data URLs kept in this browser, so the image optimizer cannot fetch them.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" className="h-40 w-full bg-slate-50 object-cover" />
-  )
-}
-
 export function PosterField({ id, value, onChange }: { id: string; value: string; onChange: (next: string) => void }) {
   const [busy, setBusy] = useState(false)
 

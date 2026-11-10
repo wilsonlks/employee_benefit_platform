@@ -6,7 +6,6 @@ import { toast } from "sonner"
 import { categoryById, formatDay, isEndingSoon, offerPhase } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import type { Offer } from "@/lib/types"
-import { PosterThumb } from "@/components/poster"
 import { CATEGORY_META } from "@/components/taxonomy"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -41,7 +40,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
   const { saved, toggle } = useSavedToggle(offer.id)
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-foreground/10">
-      {offer.image ? <PosterThumb src={offer.image} /> : <div className={cn("h-1.5", meta.bar)} />}
+      <div className={cn("h-1.5", meta.bar)} />
       <div className="absolute top-4 right-4 z-10">
         <Button
           type="button"
