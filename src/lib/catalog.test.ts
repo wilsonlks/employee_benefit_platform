@@ -4,7 +4,9 @@ import {
   approveOffer,
   categoryPopularity,
   createSeed,
+  daysUntil,
   groupStatus,
+  isHistoryOffer,
   isStaffVisible,
   maxQtyFor,
   queryOffers,
@@ -13,6 +15,7 @@ import {
   resolvePoster,
   validateOffer,
 } from "./catalog"
+import { applyExpiry, dueReminders, monthlyReport } from "./lifecycle"
 import { posterSrc } from "./poster"
 
 const now = new Date("2026-11-06T04:00:00Z").getTime()
@@ -72,6 +75,35 @@ assert.equal(posterSrc("javascript:alert(1)"), "")
 assert.equal(posterSrc(""), "")
 assert.equal(posterSrc("/posters/coffee.svg"), "/posters/coffee.svg")
 assert.equal(posterSrc("/posters/../secret.svg"), "")
+assert.equal(daysUntil("2026-11-10", "2026-11-13"), 3)
+
+const reminders = dueReminders(seed.offers, seed.savedByUser, [], "2026-11-10")
+assert.equal(reminders.length, 1)
+assert.equal(reminders[0]?.offerId, "off-cinema")
+assert.equal(dueReminders(seed.offers, seed.savedByUser, reminders, "2026-11-10").length, 0)
+
+const expired = seed.offers.find((offer) => offer.id === "off-expired")
+assert.ok(expired && isHistoryOffer(expired, "2026-11-10"))
+assert.ok(coffee)
+const renewed = applyExpiry([{ ...coffee, autoRenew: true, validFrom: "2026-10-01", validUntil: "2026-10-31" }], "2026-11-10")
+assert.ok(renewed[0].validUntil >= "2026-11-10" && renewed[0].published)
+const removed = applyExpiry([{ ...coffee, autoRenew: false, expireAction: "unpublish", validFrom: "2026-10-01", validUntil: "2026-10-31" }], "2026-11-10")
+assert.equal(removed[0].takenDown, true)
+assert.equal(removed[0].published, false)
+
+const report = monthlyReport(
+  seed.offers,
+  [
+    { offerId: "off-coffee", userId: "a", dept: "市場部", at: "2026-11-03T09:00:00+08:00" },
+    { offerId: "off-coffee", userId: "b", dept: "市場部", at: "2026-11-04T09:00:00+08:00" },
+    { offerId: "off-check", userId: "c", dept: "財務部", at: "2026-11-04T09:00:00+08:00" },
+  ],
+  "2026-11-10",
+)
+assert.equal(report.topOffers[0]?.id, "off-coffee")
+assert.equal(report.departments[0]?.dept, "市場部")
+assert.equal(report.expiring.some((offer) => offer.id === "off-cinema"), true)
+assert.equal(report.expiring.some((offer) => offer.autoRenew), false)
 
 const popularity = categoryPopularity(seed.offers, seed.views, todayHK())
 assert.equal(popularity.leader?.id, "food")

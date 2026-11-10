@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { Heart, House, LayoutGrid, RotateCcw, Shield, Users } from "lucide-react"
+import { Heart, House, LayoutGrid, Mail, RotateCcw, Shield, Users } from "lucide-react"
 import { toast } from "sonner"
 import { isPeopleTeam, roleLabel } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
@@ -33,7 +33,7 @@ function active(pathname: string, href: string) {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, ready, logout, resetDemo } = useStore()
+  const { user, ready, logout, resetDemo, mails } = useStore()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -92,6 +92,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ) : null}
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            <Link href="/mail" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "relative h-9 px-2.5")} aria-label="內部郵件">
+              <Mail className="size-4" />
+              <span className="hidden sm:inline">郵件</span>
+              {mails.filter((mail) => mail.toUserId === user.id && !mail.read).length > 0 ? (
+                <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white">
+                  {mails.filter((mail) => mail.toUserId === user.id && !mail.read).length}
+                </span>
+              ) : null}
+            </Link>
             {isPeopleTeam(user.role) ? (
               <Link href="/admin" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-9 md:hidden")}>
                 <Shield className="size-4" />
@@ -113,6 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push("/saved")}>我的收藏</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/mail")}>內部郵件</DropdownMenuItem>
                 {isPeopleTeam(user.role) ? <DropdownMenuItem onClick={() => router.push("/admin")}>人事部管理</DropdownMenuItem> : null}
                 <DropdownMenuItem
                   onClick={() => {

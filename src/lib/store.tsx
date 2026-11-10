@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { approveOffer, createSeed, isGroupOpen, maxQtyFor, resolvePoster, returnOffer, todayHK, USERS } from "@/lib/catalog"
+import { applyExpiry, deptFromUser, dueReminders } from "@/lib/lifecycle"
 import { posterSrc } from "@/lib/poster"
-import type { GroupDraft, OfferDraft, OfferView, Persisted } from "@/lib/types"
+import type { GroupDraft, MailMessage, OfferDraft, OfferView, Persisted } from "@/lib/types"
 
 const STORAGE_KEY = "staff-benefits-demo-v2"
 
@@ -13,6 +14,7 @@ type Store = {
   offers: Persisted["offers"]
   groups: Persisted["groups"]
   views: Persisted["views"]
+  mails: Persisted["mails"]
   savedIds: string[]
   login: (id: string) => void
   logout: () => void
@@ -21,6 +23,7 @@ type Store = {
   saveOffer: (draft: OfferDraft) => void
   decideOffer: (id: string, decision: "approve" | "return", note?: string) => void
   recordView: (offerId: string) => void
+  markMailRead: (id: string) => void
   deleteOffer: (id: string) => void
   saveGroup: (draft: GroupDraft) => void
   deleteGroup: (id: string) => void
@@ -32,18 +35,32 @@ const StoreContext = createContext<Store | null>(null)
 function sanitize(value: unknown): Persisted | null {
   if (!value || typeof value !== "object") return null
   const raw = value as Partial<Persisted>
-  if (raw.version !== 2 || !Array.isArray(raw.offers) || !Array.isArray(raw.groups) || !Array.isArray(raw.views)) return null
+  const version = (value as { version?: unknown }).version
+  if ((version !== 2 && version !== 3) || !Array.isArray(raw.offers) || !Array.isArray(raw.groups) || !Array.isArray(raw.views)) return null
   const offersOk = raw.offers.every((offer) => offer && typeof offer.reviewStatus === "string" && typeof offer.id === "string")
   if (!offersOk) return null
   const userId = typeof raw.userId === "string" && USERS.some((user) => user.id === raw.userId) ? raw.userId : null
   const savedByUser =
     raw.savedByUser && typeof raw.savedByUser === "object" ? (raw.savedByUser as Record<string, string[]>) : {}
+  const mails = Array.isArray(raw.mails) ? raw.mails.filter((mail): mail is MailMessage => !!mail && typeof mail.id === "string" && typeof mail.toUserId === "string") : []
   return {
-    version: 2,
+    version: 3,
     userId,
-    offers: raw.offers.map((offer) => ({ ...offer, image: resolvePoster(offer) })),
+    offers: raw.offers.map((offer) => ({
+      ...offer,
+      image: resolvePoster(offer),
+      autoRenew: offer.autoRenew === true,
+      expireAction: offer.expireAction === "unpublish" ? "unpublish" : "history",
+      takenDown: offer.takenDown === true,
+    })),
     groups: raw.groups.map((group) => ({ ...group, image: resolvePoster(group) })),
-    views: raw.views.filter((view): view is OfferView => !!view && typeof view.offerId === "string" && typeof view.at === "string"),
+    views: raw.views.flatMap((view) => {
+      if (!view || typeof view.offerId !== "string" || typeof view.at !== "string") return []
+      const userIdForView = typeof view.userId === "string" ? view.userId : ""
+      const dept = typeof view.dept === "string" && view.dept ? view.dept : deptFromUser(userIdForView)
+      return [{ offerId: view.offerId, userId: userIdForView, dept, at: view.at } satisfies OfferView]
+    }),
+    mails,
     savedByUser,
   }
 }
@@ -64,6 +81,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!ready) return
+    setState((current) => {
+      const today = todayHK()
+      const offers = applyExpiry(current.offers, today)
+      const extra = dueReminders(offers, current.savedByUser, current.mails, today)
+      if (offers === current.offers && extra.length === 0) return current
+      return { ...current, offers, mails: extra.length ? [...extra, ...current.mails] : current.mails }
+    })
+  }, [ready, state.offers, state.savedByUser, state.mails])
+
+  useEffect(() => {
+    if (!ready) return
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   }, [ready, state])
 
@@ -75,6 +103,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       offers: state.offers,
       groups: state.groups,
       views: state.views,
+      mails: state.mails,
       savedIds: user ? state.savedByUser[user.id] ?? [] : [],
       login: (id) => {
         if (!USERS.some((item) => item.id === id)) return
@@ -141,8 +170,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const day = todayHK()
           const seen = current.views.some((view) => view.offerId === offerId && view.userId === viewer.id && view.at.slice(0, 10) === day)
           if (seen) return current
-          return { ...current, views: [...current.views, { offerId, userId: viewer.id, at: new Date().toISOString() }] }
+          return { ...current, views: [...current.views, { offerId, userId: viewer.id, dept: viewer.dept, at: new Date().toISOString() }] }
         }),
+      markMailRead: (id) =>
+        setState((current) => ({
+          ...current,
+          mails: current.mails.map((mail) => (mail.id === id ? { ...mail, read: true } : mail)),
+        })),
       deleteOffer: (id) =>
         setState((current) => ({
           ...current,

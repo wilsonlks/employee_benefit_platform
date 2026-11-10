@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { SearchX } from "lucide-react"
@@ -81,7 +82,15 @@ export function OffersBrowser() {
 
   return (
     <div className="grid gap-6">
-      <PageHeader title={title} description="只顯示已上架、而且未過期的項目。人事部會定期下架過期優惠。" />
+      <PageHeader
+        title={title}
+        description="只顯示已上架、而且未過期的項目。過期後會自動進入歷史專區，或按設定直接下架。"
+        actions={
+          <Link href="/history" className="text-sm font-medium text-primary">
+            歷史專區
+          </Link>
+        }
+      />
       <div className="grid gap-3">
         <label htmlFor="offer-search" className="sr-only">
           搜尋優惠

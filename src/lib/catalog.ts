@@ -32,6 +32,9 @@ export function asOfferDraft(offer: Offer): OfferDraft {
     tags: offer.tags,
     image: offer.image,
     published: offer.published,
+    autoRenew: offer.autoRenew,
+    expireAction: offer.expireAction,
+    takenDown: offer.takenDown,
     reviewStatus: offer.reviewStatus,
     submittedById: offer.submittedById,
     submittedByName: offer.submittedByName,
@@ -96,7 +99,7 @@ export const CATEGORIES: { id: CategoryId; name: string; blurb: string }[] = [
 
 export type OfferTagFilter = "all" | "new" | "limited" | "ending"
 export type OfferSort = "new" | "ending" | "merchant"
-export type OfferPhase = "live" | "upcoming" | "expired" | "draft" | "pending" | "returned"
+export type OfferPhase = "live" | "upcoming" | "expired" | "draft" | "pending" | "returned" | "takenDown"
 export type GroupPhase = "open" | "reached" | "success" | "cancelled"
 
 export const OFFER_PHASE_LABEL: Record<OfferPhase, string> = {
@@ -106,6 +109,7 @@ export const OFFER_PHASE_LABEL: Record<OfferPhase, string> = {
   draft: "草案",
   pending: "待審核",
   returned: "退回修改",
+  takenDown: "已自動下架",
 }
 
 export const GROUP_PHASE_LABEL: Record<GroupPhase, string> = {
@@ -167,6 +171,14 @@ export function greeting(now = new Date()) {
   return "晚上好"
 }
 
+export function daysUntil(from: string, to: string) {
+  const [fromYear, fromMonth, fromDate] = from.split("-").map(Number)
+  const [toYear, toMonth, toDate] = to.split("-").map(Number)
+  const start = Date.UTC(fromYear, fromMonth - 1, fromDate)
+  const end = Date.UTC(toYear, toMonth - 1, toDate)
+  return Math.round((end - start) / 86_400_000)
+}
+
 export function addDays(day: string, days: number) {
   const [year, month, date] = day.split("-").map(Number)
   const value = new Date(Date.UTC(year, month - 1, date))
@@ -216,6 +228,7 @@ export function fromDatetimeLocal(value: string) {
 export function offerPhase(offer: Offer, today = todayHK()): OfferPhase {
   if (offer.reviewStatus === "pending") return "pending"
   if (offer.reviewStatus === "returned") return "returned"
+  if (offer.takenDown) return "takenDown"
   if (offer.reviewStatus !== "approved" || !offer.published) return "draft"
   if (offer.validUntil < today) return "expired"
   if (offer.validFrom > today) return "upcoming"
@@ -223,11 +236,15 @@ export function offerPhase(offer: Offer, today = todayHK()): OfferPhase {
 }
 
 export function isStaffVisible(offer: Offer, today = todayHK()) {
-  return offer.reviewStatus === "approved" && offer.published && offer.validUntil >= today
+  return offer.reviewStatus === "approved" && offer.published && !offer.takenDown && offer.validUntil >= today
+}
+
+export function isHistoryOffer(offer: Offer, today = todayHK()) {
+  return offer.reviewStatus === "approved" && offer.published && !offer.takenDown && !offer.autoRenew && offer.validUntil < today
 }
 
 export function approveOffer(offer: Offer, at: string): Offer {
-  return { ...offer, reviewStatus: "approved", published: true, reviewedAt: at, reviewNote: "", updatedAt: at }
+  return { ...offer, reviewStatus: "approved", published: true, takenDown: false, reviewedAt: at, reviewNote: "", updatedAt: at }
 }
 
 export function returnOffer(offer: Offer, note: string, at: string): Offer {
@@ -404,7 +421,7 @@ function person(userId: string, name: string, dept: string, qty: number, at: str
   return { userId, name, dept, qty, at }
 }
 
-type OfferSeed = Omit<Offer, "reviewStatus" | "submittedById" | "submittedByName" | "reviewNote" | "reviewedAt" | "image">
+type OfferSeed = Omit<Offer, "reviewStatus" | "submittedById" | "submittedByName" | "reviewNote" | "reviewedAt" | "image" | "autoRenew" | "expireAction" | "takenDown">
 
 const OFFERS: OfferSeed[] = [
   {
@@ -672,7 +689,7 @@ const OFFERS: OfferSeed[] = [
     code: "MOVIE7",
     location: "太古、屯門、元朗",
     validFrom: "2026-11-01",
-    validUntil: "2026-11-20",
+    validUntil: "2026-11-13",
     tags: ["limited"],
     published: true,
     updatedAt: "2026-11-04T02:00:00+08:00",
@@ -879,6 +896,9 @@ function finishOffer(offer: OfferSeed): Offer {
     reviewNote: reviewStatus === "returned" ? "請先向中心確認週六價錢，再重新提交。" : "",
     reviewedAt: reviewStatus === "approved" ? offer.updatedAt : "",
     image: demoPoster(offer.id),
+    autoRenew: offer.id === "off-mart",
+    expireAction: "history",
+    takenDown: false,
   }
 }
 
@@ -908,6 +928,8 @@ export function resolvePoster(item: { id: string; image?: string; updatedAt?: st
   return ""
 }
 
+const VIEW_DEPTS = ["市場部", "市場部", "市場部", "財務部", "財務部", "客戶服務部", "工程部", "資訊科技部", "人事部"]
+
 function buildViews(today: string): OfferView[] {
   const views: OfferView[] = []
   let index = 0
@@ -917,6 +939,7 @@ function buildViews(today: string): OfferView[] {
       views.push({
         offerId,
         userId: `viewer-${index}`,
+        dept: VIEW_DEPTS[index % VIEW_DEPTS.length],
         at: `${addDays(today, -(i % 28))}T${hour}:15:00+08:00`,
       })
       index += 1
@@ -926,6 +949,7 @@ function buildViews(today: string): OfferView[] {
     views.push({
       offerId: i % 3 === 0 ? "off-ferry" : "off-check",
       userId: `earlier-${i}`,
+      dept: VIEW_DEPTS[i % VIEW_DEPTS.length],
       at: `${addDays(today, -(31 + (i % 25)))}T10:15:00+08:00`,
     })
   }
@@ -935,7 +959,7 @@ function buildViews(today: string): OfferView[] {
 export function createSeed(): Persisted {
   const today = todayHK()
   return {
-    version: 2,
+    version: 3,
     userId: null,
     offers: OFFERS.map(finishOffer),
     groups: GROUPS.map((group) => ({
@@ -944,6 +968,7 @@ export function createSeed(): Persisted {
       signups: group.signups.map((signup) => ({ ...signup })),
     })),
     views: buildViews(today),
+    mails: [],
     savedByUser: { "emp-chan": ["off-hotel", "off-cinema"] },
   }
 }

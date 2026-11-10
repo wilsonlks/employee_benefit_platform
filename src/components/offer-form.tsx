@@ -6,7 +6,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { addDays, CATEGORIES, hasErrors, isCategoryId, isPeopleTeam, todayHK, toggleTag, validateOffer } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
-import type { CategoryId, Offer, OfferTag } from "@/lib/types"
+import type { CategoryId, ExpireAction, Offer, OfferTag } from "@/lib/types"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PosterField } from "@/components/poster"
 import { Field, PageHeader, StaffBlocked } from "@/components/states"
@@ -18,6 +18,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
 const categoryItems = Object.fromEntries(CATEGORIES.map((category) => [category.id, category.name]))
+const expireItems: Record<ExpireAction, string> = {
+  history: "移到歷史專區",
+  unpublish: "直接下架",
+}
 
 export function OfferEditor({ id }: { id?: string }) {
   const { user, offers } = useStore()
@@ -55,6 +59,8 @@ function OfferForm({ initial }: { initial?: Offer }) {
   const [validUntil, setValidUntil] = useState(initial?.validUntil ?? addDays(today, 90))
   const [tags, setTags] = useState<OfferTag[]>(initial?.tags ?? [])
   const [image, setImage] = useState(initial?.image ?? "")
+  const [autoRenew, setAutoRenew] = useState(initial?.autoRenew ?? false)
+  const [expireAction, setExpireAction] = useState<ExpireAction>(initial?.expireAction ?? "history")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [confirming, setConfirming] = useState(false)
 
@@ -85,6 +91,9 @@ function OfferForm({ initial }: { initial?: Offer }) {
       validUntil,
       tags,
       image,
+      autoRenew,
+      expireAction,
+      takenDown: keeping ? initial?.takenDown ?? false : false,
       published: keeping ? initial?.published ?? false : false,
       reviewStatus,
       submittedById: initial?.submittedById ?? user.id,
@@ -161,6 +170,32 @@ function OfferForm({ initial }: { initial?: Offer }) {
         </Field>
         <Field id="validUntil" label="結束日期" error={errors.validUntil}>
           <Input id="validUntil" type="date" value={validUntil} onChange={(event) => setValidUntil(event.target.value)} aria-invalid={!!errors.validUntil} aria-describedby={described("validUntil")} className="h-11" />
+        </Field>
+        <div className="sm:col-span-2">
+          <ToggleRow
+            id="auto-renew"
+            checked={autoRenew}
+            onChange={setAutoRenew}
+            title="自動續期"
+            body="商家提供的常態優惠。到期後按原本的日數自動延長，同事不會看到中斷。"
+          />
+        </div>
+        <Field id="expire-action" label="到期後" hint={autoRenew ? "已開啟自動續期，到期後不會下架。" : "沒有自動續期時，過期當日會按這裡處理。"}>
+          <Select
+            items={expireItems}
+            value={expireAction}
+            onValueChange={(value) => {
+              if (value === "history" || value === "unpublish") setExpireAction(value)
+            }}
+          >
+            <SelectTrigger id="expire-action" className="h-11 w-full" disabled={autoRenew}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="history">移到歷史專區</SelectItem>
+              <SelectItem value="unpublish">直接下架</SelectItem>
+            </SelectContent>
+          </Select>
         </Field>
         <div className="grid gap-2 sm:col-span-2">
           <p className="text-sm font-medium">標籤</p>

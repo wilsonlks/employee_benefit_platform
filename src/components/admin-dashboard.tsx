@@ -34,7 +34,8 @@ const FILTERS: { id: OfferFilter; label: string }[] = [
   { id: "live", label: "上架中" },
   { id: "upcoming", label: "即將開始" },
   { id: "draft", label: "草案" },
-  { id: "expired", label: "已過期" },
+  { id: "expired", label: "歷史專區" },
+  { id: "takenDown", label: "已自動下架" },
 ]
 
 export function AdminDashboard() {

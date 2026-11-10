@@ -5,7 +5,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Clock, Copy, Heart, Lock, SearchX } from "lucide-react"
 import { toast } from "sonner"
-import { categoryById, formatDay, isPeopleTeam, isStaffVisible, offerPhase, OFFER_PHASE_LABEL, queryOffers } from "@/lib/catalog"
+import { categoryById, daysUntil, formatDay, isHistoryOffer, isPeopleTeam, isStaffVisible, offerPhase, OFFER_PHASE_LABEL, queryOffers, todayHK } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import { OfferCard, OfferTags, useSavedToggle } from "@/components/offer-card"
 import { Poster } from "@/components/poster"
@@ -41,7 +41,9 @@ export function OfferDetail({ id }: { id: string }) {
   }
 
   const staffCanSee = isStaffVisible(offer)
-  if (!staffCanSee && !isPeopleTeam(user.role)) {
+  const history = isHistoryOffer(offer)
+  const daysLeft = daysUntil(todayHK(), offer.validUntil)
+  if (!staffCanSee && !history && !isPeopleTeam(user.role)) {
     const expired = offerPhase(offer) === "expired"
     return (
       <EmptyState
@@ -76,7 +78,15 @@ export function OfferDetail({ id }: { id: string }) {
           <ArrowLeft className="size-4" />
           返回
         </button>
-        {!staffCanSee ? (
+        {history ? (
+          <p className="mb-4 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-700">此優惠已到期，並已移到歷史專區，只供查閱。</p>
+        ) : null}
+        {staffCanSee && daysLeft >= 0 && daysLeft <= 3 ? (
+          <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            {daysLeft === 0 ? "今天到期。" : `還有 ${daysLeft} 天到期。`}已收藏的同事會收到內部郵件提醒。
+          </p>
+        ) : null}
+        {!staffCanSee && !history ? (
           <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950">
             同事暫時看不到這項優惠（{OFFER_PHASE_LABEL[offerPhase(offer)]}）。
           </p>
@@ -101,6 +111,7 @@ export function OfferDetail({ id }: { id: string }) {
             <p className="text-3xl font-bold text-[#065f46]">{offer.discount}</p>
             <dl className="mt-4 grid gap-3 text-sm">
               <Row label="有效期" value={`${formatDay(offer.validFrom)} 至 ${formatDay(offer.validUntil)}`} />
+              {offer.autoRenew ? <Row label="續期" value="到期後按原期限自動續期" /> : null}
               <Row label="地點" value={offer.location} />
               <Row label="優惠碼" value={offer.code || "無須優惠碼，出示職員證即可"} />
             </dl>

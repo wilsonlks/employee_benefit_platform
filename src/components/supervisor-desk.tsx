@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
-import { categoryById, categoryPopularity, formatDay, groupStatus, todayHK } from "@/lib/catalog"
+import { categoryById, categoryPopularity, daysUntil, formatDay, groupStatus, todayHK } from "@/lib/catalog"
+import { monthlyReport, reportCsv } from "@/lib/lifecycle"
 import { useStore } from "@/lib/store"
 import type { Offer } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +22,20 @@ export function SupervisorDesk() {
   const activeGroups = groups.filter((group) => group.published && ["open", "reached"].includes(groupStatus(group))).length
   const maxClicks = Math.max(...popularity.byCategory.map((item) => item.clicks), 1)
   const leader = popularity.leader && popularity.leader.clicks > 0 ? popularity.leader : null
+  const today = todayHK()
+  const report = useMemo(() => monthlyReport(offers, views, today), [offers, views, today])
+
+  function exportReport() {
+    const csv = reportCsv(offers, views, today)
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `同事福利報表-${today}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+    toast.success("已下載本月報表")
+  }
 
   function approve(offer: Offer) {
     decideOffer(offer.id, "approve")
@@ -66,6 +81,35 @@ export function SupervisorDesk() {
         <Stat label="待審核優惠" value={String(pending.length)} hint="項" hintClass="text-gray-400" valueClass="text-orange-500" />
         <Stat label="進行中團購" value={String(activeGroups)} hint="團" hintClass="text-gray-400" valueClass="text-blue-600" />
       </div>
+
+      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">本月報表</h2>
+            <p className="mt-1 text-sm text-gray-500">一鍵匯出本月點擊最高的優惠、部門使用情況，以及 14 日內到期、需要下架的項目。</p>
+          </div>
+          <Button type="button" className="bg-[#15803d] hover:bg-[#065f46]" onClick={exportReport}>
+            匯出本月報表
+          </Button>
+        </div>
+        <dl className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div>
+            <dt className="text-sm text-gray-500">本月點擊最高</dt>
+            <dd className="mt-1 font-bold text-gray-900">{report.topOffers[0] ? `${report.topOffers[0].title} · ${report.topOffers[0].clicks} 次` : "未有紀錄"}</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-gray-500">使用最踴躍的部門</dt>
+            <dd className="mt-1 font-bold text-gray-900">{report.departments[0] ? `${report.departments[0].dept} · ${report.departments[0].clicks} 次` : "未有紀錄"}</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-gray-500">14 日內需下架</dt>
+            <dd className="mt-1 font-bold text-gray-900">
+              {report.expiring.length} 項
+              {report.expiring[0] ? `，最近是 ${report.expiring[0].title}（${daysUntil(today, report.expiring[0].validUntil)} 天）` : ""}
+            </dd>
+          </div>
+        </dl>
+      </section>
 
       <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 p-6">
