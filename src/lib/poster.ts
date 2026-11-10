@@ -1,12 +1,13 @@
 const POSTER_PATTERN = /^data:image\/(?:jpeg|jpg|png|webp|gif|svg\+xml)[;,]/i
+const BUNDLED_POSTER = /^\/posters\/[a-z0-9-]+\.svg$/
 const MAX_POSTER_LENGTH = 550_000
 
 export function posterSrc(value: unknown) {
   if (typeof value !== "string") return ""
   const trimmed = value.trim()
   if (!trimmed || trimmed.length > MAX_POSTER_LENGTH) return ""
-  if (!POSTER_PATTERN.test(trimmed)) return ""
-  return trimmed
+  if (POSTER_PATTERN.test(trimmed) || BUNDLED_POSTER.test(trimmed)) return trimmed
+  return ""
 }
 
 export async function readPoster(file: File) {

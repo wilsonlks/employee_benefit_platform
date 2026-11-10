@@ -10,6 +10,7 @@ import {
   queryOffers,
   signupQty,
   todayHK,
+  resolvePoster,
   validateOffer,
 } from "./catalog"
 import { posterSrc } from "./poster"
@@ -58,12 +59,19 @@ assert.equal(publishedFair.published, true)
 assert.equal(isStaffVisible(publishedFair, today), true)
 
 const coffee = seed.offers.find((offer) => offer.id === "off-coffee")
+const cinema = seed.offers.find((offer) => offer.id === "off-cinema")
 const dental = seed.offers.find((offer) => offer.id === "off-dental")
-assert.ok(coffee?.image.startsWith("data:image/svg+xml"))
+assert.equal(coffee?.image, "/posters/coffee.svg")
+assert.equal(cinema?.image, "/posters/cinema.svg")
 assert.equal(dental?.image, "")
-assert.ok(xmas.image.startsWith("data:image/svg+xml"))
+assert.equal(xmas.image, "/posters/xmas.svg")
+assert.equal(resolvePoster({ id: "off-coffee", image: "", updatedAt: "2026-11-02T02:00:00+08:00" }), "/posters/coffee.svg")
+assert.equal(resolvePoster({ id: "off-coffee", updatedAt: "2026-11-02T02:00:00+08:00" }), "/posters/coffee.svg")
+assert.equal(resolvePoster({ id: "off-coffee", image: "", updatedAt: "2026-11-10T01:00:00+08:00" }), "")
 assert.equal(posterSrc("javascript:alert(1)"), "")
 assert.equal(posterSrc(""), "")
+assert.equal(posterSrc("/posters/coffee.svg"), "/posters/coffee.svg")
+assert.equal(posterSrc("/posters/../secret.svg"), "")
 
 const popularity = categoryPopularity(seed.offers, seed.views, todayHK())
 assert.equal(popularity.leader?.id, "food")

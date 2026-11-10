@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#1e3a5f"/>
+  <rect x="36" y="36" width="888" height="468" rx="28" fill="#f8fafc"/>
+  <rect x="36" y="36" width="888" height="16" fill="#1d4ed8"/>
+  <text x="76" y="140" font-family="sans-serif" font-size="26" fill="#1d4ed8">星光戲院 · 同事專享</text>
+  <text x="76" y="240" font-family="sans-serif" font-size="56" font-weight="700" fill="#0f172a">2D 戲票七折</text>
+  <text x="76" y="310" font-family="sans-serif" font-size="28" fill="#334155">優惠碼 MOVIE7</text>
+  <text x="76" y="440" font-family="sans-serif" font-size="22" fill="#64748b">太古、屯門、元朗</text>
+</svg>

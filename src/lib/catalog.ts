@@ -1,3 +1,4 @@
+import { posterSrc } from "@/lib/poster"
 import type {
   CategoryId,
   GroupBuy,
@@ -881,16 +882,30 @@ function finishOffer(offer: OfferSeed): Offer {
   }
 }
 
+const DEMO_POSTERS: Record<string, string> = {
+  "off-coffee": "/posters/coffee.svg",
+  "off-cinema": "/posters/cinema.svg",
+  "gb-xmas": "/posters/xmas.svg",
+}
+
+const DEMO_POSTER_UPDATED: Record<string, string> = {
+  "off-coffee": "2026-11-02T02:00:00+08:00",
+  "off-cinema": "2026-11-04T02:00:00+08:00",
+  "gb-xmas": "2026-11-01T02:00:00+08:00",
+}
+
 export function demoPoster(id: string) {
-  const posters: Record<string, { kicker: string; title: string; note: string }> = {
-    "off-coffee": { kicker: "午後咖啡 · 同事專享", title: "平日下午茶買一送一", note: "平日 15:00 前 · 出示職員證" },
-    "off-cinema": { kicker: "星光戲院 · 同事專享", title: "2D 戲票七折", note: "優惠碼 MOVIE7" },
-    "gb-xmas": { kicker: "鮮選超市 · 團購", title: "聖誕超市禮券", note: "$500 禮券 團購價 $460" },
-  }
-  const poster = posters[id]
-  if (!poster) return ""
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420"><rect width="960" height="420" fill="#065f46"/><rect x="36" y="36" width="888" height="348" rx="28" fill="#f8fafc"/><text x="76" y="130" font-family="sans-serif" font-size="24" fill="#15803d">${poster.kicker}</text><text x="76" y="220" font-family="sans-serif" font-size="52" font-weight="700" fill="#0f172a">${poster.title}</text><text x="76" y="290" font-family="sans-serif" font-size="28" fill="#334155">${poster.note}</text></svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+  return DEMO_POSTERS[id] ?? ""
+}
+
+export function resolvePoster(item: { id: string; image?: string; updatedAt?: string }) {
+  const saved = Object.prototype.hasOwnProperty.call(item, "image") ? posterSrc(item.image) : ""
+  if (saved) return saved
+  const bundled = demoPoster(item.id)
+  if (!bundled) return ""
+  if (!Object.prototype.hasOwnProperty.call(item, "image")) return bundled
+  if (item.updatedAt && item.updatedAt === DEMO_POSTER_UPDATED[item.id]) return bundled
+  return ""
 }
 
 function buildViews(today: string): OfferView[] {
