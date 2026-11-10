@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { categoryById, formatDay, isPeopleTeam, isStaffVisible, offerPhase, OFFER_PHASE_LABEL, queryOffers } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import { OfferCard, OfferTags, useSavedToggle } from "@/components/offer-card"
+import { Poster } from "@/components/poster"
 import { EmptyState } from "@/components/states"
 import { buttonVariants } from "@/components/ui/button"
 import { Button } from "@/components/ui/button"
@@ -91,6 +92,7 @@ export function OfferDetail({ id }: { id: string }) {
               <p className="mt-2 text-base text-muted-foreground">{offer.merchant}</p>
               <p className="mt-4 text-base leading-7 text-slate-700">{offer.summary}</p>
             </div>
+            <Poster src={offer.image} alt={`${offer.title}海報`} />
             <Section title="優惠內容" body={offer.detail} />
             <Section title="使用方法" body={offer.howToRedeem} />
             {offer.terms ? <Section title="注意事項" body={offer.terms} /> : null}

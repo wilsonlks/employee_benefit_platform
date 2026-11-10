@@ -8,6 +8,7 @@ import { addDays, fromDatetimeLocal, hasErrors, isPeopleTeam, todayHK, toDatetim
 import { useStore } from "@/lib/store"
 import type { GroupBuy } from "@/lib/types"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { PosterField } from "@/components/poster"
 import { Field, PageHeader, StaffBlocked } from "@/components/states"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -47,6 +48,7 @@ function GroupForm({ initial }: { initial?: GroupBuy }) {
   const [summary, setSummary] = useState(initial?.summary ?? "")
   const [detail, setDetail] = useState(initial?.detail ?? "")
   const [published, setPublished] = useState(initial?.published ?? true)
+  const [image, setImage] = useState(initial?.image ?? "")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [confirming, setConfirming] = useState(false)
 
@@ -68,6 +70,7 @@ function GroupForm({ initial }: { initial?: GroupBuy }) {
       deadline: deadline ? fromDatetimeLocal(deadline) : "",
       summary,
       detail,
+      image,
       published,
     }
     const nextErrors = validateGroup(draft)
@@ -126,6 +129,9 @@ function GroupForm({ initial }: { initial?: GroupBuy }) {
         <Field id="group-deadline" label="截止時間" error={errors.deadline} hint="以香港時間計算。截止後按人數自動成團或取消。">
           <Input id="group-deadline" type="datetime-local" value={deadline} onChange={(event) => setDeadline(event.target.value)} aria-invalid={!!errors.deadline} aria-describedby={described("deadline")} className="h-11" />
         </Field>
+        <div className="sm:col-span-2">
+          <PosterField id="group-image" value={image} onChange={setImage} />
+        </div>
         <div className="sm:col-span-2">
           <Field id="group-summary" label="簡介" error={errors.summary}>
             <Textarea id="group-summary" value={summary} onChange={(event) => setSummary(event.target.value)} aria-invalid={!!errors.summary} aria-describedby={described("summary")} className="min-h-20" />

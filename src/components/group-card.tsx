@@ -4,6 +4,7 @@ import Link from "next/link"
 import { deadlineHint, formatWhen, GROUP_PHASE_LABEL, groupStatus, signupQty } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
 import type { GroupBuy } from "@/lib/types"
+import { PosterThumb } from "@/components/poster"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
@@ -17,8 +18,10 @@ export function GroupCard({ group }: { group: GroupBuy }) {
   return (
     <Link
       href={`/groups/${group.id}`}
-      className="flex h-full flex-col gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-foreground/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-foreground/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
+      {group.image ? <PosterThumb src={group.image} /> : null}
+      <div className="flex flex-1 flex-col gap-4 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold leading-snug">{group.title}</h3>
@@ -53,6 +56,7 @@ export function GroupCard({ group }: { group: GroupBuy }) {
             你已報名 {mine.qty} {group.unitLabel}
           </span>
         ) : null}
+      </div>
       </div>
     </Link>
   )

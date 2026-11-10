@@ -29,6 +29,7 @@ export function asOfferDraft(offer: Offer): OfferDraft {
     validFrom: offer.validFrom,
     validUntil: offer.validUntil,
     tags: offer.tags,
+    image: offer.image,
     published: offer.published,
     reviewStatus: offer.reviewStatus,
     submittedById: offer.submittedById,
@@ -51,6 +52,7 @@ export function asGroupDraft(group: GroupBuy): GroupDraft {
     limit: group.limit,
     perPerson: group.perPerson,
     deadline: group.deadline,
+    image: group.image,
     published: group.published,
   }
 }
@@ -401,7 +403,7 @@ function person(userId: string, name: string, dept: string, qty: number, at: str
   return { userId, name, dept, qty, at }
 }
 
-type OfferSeed = Omit<Offer, "reviewStatus" | "submittedById" | "submittedByName" | "reviewNote" | "reviewedAt">
+type OfferSeed = Omit<Offer, "reviewStatus" | "submittedById" | "submittedByName" | "reviewNote" | "reviewedAt" | "image">
 
 const OFFERS: OfferSeed[] = [
   {
@@ -730,7 +732,7 @@ const OFFERS: OfferSeed[] = [
   },
 ]
 
-const GROUPS: GroupBuy[] = [
+const GROUPS: Omit<GroupBuy, "image">[] = [
   {
     id: "gb-xmas",
     title: "聖誕超市禮券",
@@ -875,7 +877,20 @@ function finishOffer(offer: OfferSeed): Offer {
     submittedByName: "李慧敏",
     reviewNote: reviewStatus === "returned" ? "請先向中心確認週六價錢，再重新提交。" : "",
     reviewedAt: reviewStatus === "approved" ? offer.updatedAt : "",
+    image: demoPoster(offer.id),
   }
+}
+
+export function demoPoster(id: string) {
+  const posters: Record<string, { kicker: string; title: string; note: string }> = {
+    "off-coffee": { kicker: "午後咖啡 · 同事專享", title: "平日下午茶買一送一", note: "平日 15:00 前 · 出示職員證" },
+    "off-cinema": { kicker: "星光戲院 · 同事專享", title: "2D 戲票七折", note: "優惠碼 MOVIE7" },
+    "gb-xmas": { kicker: "鮮選超市 · 團購", title: "聖誕超市禮券", note: "$500 禮券 團購價 $460" },
+  }
+  const poster = posters[id]
+  if (!poster) return ""
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420"><rect width="960" height="420" fill="#065f46"/><rect x="36" y="36" width="888" height="348" rx="28" fill="#f8fafc"/><text x="76" y="130" font-family="sans-serif" font-size="24" fill="#15803d">${poster.kicker}</text><text x="76" y="220" font-family="sans-serif" font-size="52" font-weight="700" fill="#0f172a">${poster.title}</text><text x="76" y="290" font-family="sans-serif" font-size="28" fill="#334155">${poster.note}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 function buildViews(today: string): OfferView[] {
@@ -908,7 +923,11 @@ export function createSeed(): Persisted {
     version: 2,
     userId: null,
     offers: OFFERS.map(finishOffer),
-    groups: GROUPS.map((group) => ({ ...group, signups: group.signups.map((signup) => ({ ...signup })) })),
+    groups: GROUPS.map((group) => ({
+      ...group,
+      image: demoPoster(group.id),
+      signups: group.signups.map((signup) => ({ ...signup })),
+    })),
     views: buildViews(today),
     savedByUser: { "emp-chan": ["off-hotel", "off-cinema"] },
   }

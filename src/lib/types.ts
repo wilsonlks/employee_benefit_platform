@@ -34,6 +34,7 @@ export type Offer = {
   validFrom: string
   validUntil: string
   tags: OfferTag[]
+  image: string
   published: boolean
   reviewStatus: ReviewStatus
   submittedById: string
@@ -70,6 +71,7 @@ export type GroupBuy = {
   perPerson: number
   deadline: string
   signups: Signup[]
+  image: string
   published: boolean
   updatedAt: string
 }

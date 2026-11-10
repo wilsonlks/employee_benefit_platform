@@ -1,7 +1,8 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
-import { approveOffer, createSeed, isGroupOpen, maxQtyFor, returnOffer, todayHK, USERS } from "@/lib/catalog"
+import { approveOffer, createSeed, demoPoster, isGroupOpen, maxQtyFor, returnOffer, todayHK, USERS } from "@/lib/catalog"
+import { posterSrc } from "@/lib/poster"
 import type { GroupDraft, OfferDraft, OfferView, Persisted } from "@/lib/types"
 
 const STORAGE_KEY = "staff-benefits-demo-v2"
@@ -28,6 +29,11 @@ type Store = {
 
 const StoreContext = createContext<Store | null>(null)
 
+function storedPoster(item: { id: string; image?: string }) {
+  if (!Object.prototype.hasOwnProperty.call(item, "image")) return demoPoster(item.id)
+  return posterSrc(item.image)
+}
+
 function sanitize(value: unknown): Persisted | null {
   if (!value || typeof value !== "object") return null
   const raw = value as Partial<Persisted>
@@ -40,8 +46,8 @@ function sanitize(value: unknown): Persisted | null {
   return {
     version: 2,
     userId,
-    offers: raw.offers,
-    groups: raw.groups,
+    offers: raw.offers.map((offer) => ({ ...offer, image: storedPoster(offer) })),
+    groups: raw.groups.map((group) => ({ ...group, image: storedPoster(group) })),
     views: raw.views.filter((view): view is OfferView => !!view && typeof view.offerId === "string" && typeof view.at === "string"),
     savedByUser,
   }
@@ -114,7 +120,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       saveOffer: (draft) =>
         setState((current) => {
-          const next = { ...draft, tags: [...draft.tags], updatedAt: new Date().toISOString() }
+          const next = { ...draft, tags: [...draft.tags], image: posterSrc(draft.image), updatedAt: new Date().toISOString() }
           const exists = current.offers.some((offer) => offer.id === draft.id)
           return {
             ...current,
@@ -153,7 +159,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveGroup: (draft) =>
         setState((current) => {
           const previous = current.groups.find((group) => group.id === draft.id)
-          const next = { ...draft, signups: previous ? previous.signups.map((signup) => ({ ...signup })) : [], updatedAt: new Date().toISOString() }
+          const next = {
+            ...draft,
+            image: posterSrc(draft.image),
+            signups: previous ? previous.signups.map((signup) => ({ ...signup })) : [],
+            updatedAt: new Date().toISOString(),
+          }
           return {
             ...current,
             groups: previous ? current.groups.map((group) => (group.id === draft.id ? next : group)) : [next, ...current.groups],

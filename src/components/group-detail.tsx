@@ -16,6 +16,7 @@ import {
   signupQty,
 } from "@/lib/catalog"
 import { useStore } from "@/lib/store"
+import { Poster } from "@/components/poster"
 import { EmptyState } from "@/components/states"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -92,6 +93,7 @@ export function GroupDetail({ id }: { id: string }) {
           <h1 className="mt-3 text-3xl font-bold tracking-tight">{group.title}</h1>
           <p className="mt-3 text-base leading-7 text-slate-700">{group.summary}</p>
         </div>
+        <Poster src={group.image} alt={`${group.title}海報`} />
         <section className="rounded-2xl bg-white p-5 ring-1 ring-foreground/10">
           <h2 className="text-lg font-bold">活動詳情</h2>
           <p className="mt-2 text-sm leading-7 text-slate-700">{group.detail}</p>

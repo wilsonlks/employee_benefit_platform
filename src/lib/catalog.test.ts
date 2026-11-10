@@ -12,6 +12,7 @@ import {
   todayHK,
   validateOffer,
 } from "./catalog"
+import { posterSrc } from "./poster"
 
 const now = new Date("2026-11-06T04:00:00Z").getTime()
 const today = "2026-11-06"
@@ -55,6 +56,14 @@ assert.equal(isStaffVisible(fair, today), false)
 const publishedFair = approveOffer(fair, "2026-11-06T08:00:00+08:00")
 assert.equal(publishedFair.published, true)
 assert.equal(isStaffVisible(publishedFair, today), true)
+
+const coffee = seed.offers.find((offer) => offer.id === "off-coffee")
+const dental = seed.offers.find((offer) => offer.id === "off-dental")
+assert.ok(coffee?.image.startsWith("data:image/svg+xml"))
+assert.equal(dental?.image, "")
+assert.ok(xmas.image.startsWith("data:image/svg+xml"))
+assert.equal(posterSrc("javascript:alert(1)"), "")
+assert.equal(posterSrc(""), "")
 
 const popularity = categoryPopularity(seed.offers, seed.views, todayHK())
 assert.equal(popularity.leader?.id, "food")

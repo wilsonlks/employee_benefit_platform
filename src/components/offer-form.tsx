@@ -8,6 +8,7 @@ import { addDays, CATEGORIES, hasErrors, isCategoryId, isPeopleTeam, todayHK, to
 import { useStore } from "@/lib/store"
 import type { CategoryId, Offer, OfferTag } from "@/lib/types"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { PosterField } from "@/components/poster"
 import { Field, PageHeader, StaffBlocked } from "@/components/states"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -53,6 +54,7 @@ function OfferForm({ initial }: { initial?: Offer }) {
   const [validFrom, setValidFrom] = useState(initial?.validFrom ?? today)
   const [validUntil, setValidUntil] = useState(initial?.validUntil ?? addDays(today, 90))
   const [tags, setTags] = useState<OfferTag[]>(initial?.tags ?? [])
+  const [image, setImage] = useState(initial?.image ?? "")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [confirming, setConfirming] = useState(false)
 
@@ -82,6 +84,7 @@ function OfferForm({ initial }: { initial?: Offer }) {
       validFrom,
       validUntil,
       tags,
+      image,
       published: keeping ? initial?.published ?? false : false,
       reviewStatus,
       submittedById: initial?.submittedById ?? user.id,
@@ -115,6 +118,9 @@ function OfferForm({ initial }: { initial?: Offer }) {
         <p className="rounded-2xl bg-orange-50 px-4 py-3 text-sm leading-6 text-orange-900">主管退回：{initial.reviewNote}</p>
       ) : null}
       <div className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-foreground/10 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <PosterField id="offer-image" value={image} onChange={setImage} />
+        </div>
         <Field id="title" label="優惠名稱" error={errors.title}>
           <Input id="title" value={title} onChange={(event) => setTitle(event.target.value)} aria-invalid={!!errors.title} aria-describedby={described("title")} className="h-11" />
         </Field>
