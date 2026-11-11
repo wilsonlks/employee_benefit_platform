@@ -73,7 +73,7 @@ export const USERS: User[] = [
   {
     id: "hr-lee",
     name: "李慧敏",
-    dept: "人事部",
+    dept: "人力資源部",
     title: "專員",
     role: "hr",
     email: "lee.waiman@staff.example",
@@ -81,7 +81,7 @@ export const USERS: User[] = [
   {
     id: "hr-ho",
     name: "何嘉慧",
-    dept: "人事部",
+    dept: "人力資源部",
     title: "主管",
     role: "supervisor",
     email: "ho.kawai@staff.example",
@@ -122,7 +122,7 @@ export const GROUP_PHASE_LABEL: Record<GroupPhase, string> = {
 export const GROUP_PHASE_NOTE: Record<GroupPhase, string> = {
   open: "截止前仍可報名。人數達標即成團，未達標會在截止後取消。",
   reached: "已過門檻。截止前仍可繼續報名，截止後視為成團成功。",
-  success: "已截止並達標。人事部會按報名名單跟進，示範環境不會真正扣款。",
+  success: "已截止並達標。人力資源部會按報名名單跟進，示範環境不會真正扣款。",
   cancelled: "已截止但未達門檻，這次不會成團，也不會扣款。",
 }
 
@@ -717,7 +717,7 @@ const OFFERS: OfferSeed[] = [
     title: "週六上午檢查時段",
     merchant: "盈康體檢",
     category: "health",
-    summary: "擬新增週六上午基本檢查，人事部仍在核對價錢。",
+    summary: "擬新增週六上午基本檢查，人力資源部仍在核對價錢。",
     detail: "草案價錢為 $1,680。待中心回覆合約後先上架，同事暫時看不到。",
     howToRedeem: "未上架，請勿對外發放。",
     terms: "待審核。",
@@ -755,7 +755,7 @@ const GROUPS: Omit<GroupBuy, "image">[] = [
     id: "gb-xmas",
     title: "聖誕超市禮券",
     merchant: "鮮選超市",
-    summary: "$500 禮券以 $460 團購，成團後由人事部統一購買派發。",
+    summary: "$500 禮券以 $460 團購，成團後由人力資源部統一購買派發。",
     detail: "每人最多 3 張。成團後費用於 12 月薪金扣除，禮券預計 12 月 18 日前經部門文員派發。未成團不會扣款。",
     priceLabel: "HK$460",
     unitLabel: "張",
@@ -769,7 +769,7 @@ const GROUPS: Omit<GroupBuy, "image">[] = [
       person("emp-chan", "陳嘉欣", "市場部", 1, "2026-11-04T03:20:00+08:00"),
       person("seed-wong", "黃志明", "財務部", 2, "2026-11-02T02:00:00+08:00"),
       person("seed-lam", "林曉彤", "資訊科技部", 2, "2026-11-02T04:00:00+08:00"),
-      person("seed-ho", "何家俊", "人事部", 1, "2026-11-03T01:00:00+08:00"),
+      person("seed-ho", "何家俊", "人力資源部", 1, "2026-11-03T01:00:00+08:00"),
       person("seed-ng", "吳佩珊", "客戶服務部", 3, "2026-11-03T03:00:00+08:00"),
       person("seed-cheung", "張偉強", "工程部", 2, "2026-11-03T06:00:00+08:00"),
       person("seed-leung", "梁詠詩", "市場部", 2, "2026-11-04T01:00:00+08:00"),
@@ -778,7 +778,7 @@ const GROUPS: Omit<GroupBuy, "image">[] = [
       person("seed-cheng", "鄭子朗", "工程部", 3, "2026-11-05T01:00:00+08:00"),
       person("seed-hui", "許凱晴", "資訊科技部", 2, "2026-11-05T02:30:00+08:00"),
       person("seed-yuen", "袁樂怡", "市場部", 2, "2026-11-05T04:00:00+08:00"),
-      person("seed-choi", "蔡穎妍", "人事部", 2, "2026-11-05T06:00:00+08:00"),
+      person("seed-choi", "蔡穎妍", "人力資源部", 2, "2026-11-05T06:00:00+08:00"),
       person("seed-fung", "馮家寶", "客戶服務部", 2, "2026-11-06T01:00:00+08:00"),
       person("seed-so", "蘇文迪", "工程部", 1, "2026-11-06T02:00:00+08:00"),
     ],
@@ -786,7 +786,7 @@ const GROUPS: Omit<GroupBuy, "image">[] = [
   {
     id: "gb-trip",
     title: "長洲員工旅行",
-    merchant: "人事部活動組",
+    merchant: "人力資源部活動組",
     summary: "一天船程、行山及午餐，費用由參加者分擔。",
     detail: "11 月 28 日（星期六）上午 9 時於中環 5 號碼頭集合。名額 40 人，達 20 人成團。費用含來回船票及午餐，不含個人消費。",
     priceLabel: "HK$180",
@@ -804,7 +804,7 @@ const GROUPS: Omit<GroupBuy, "image">[] = [
       person("seed-d", "鄧梓峰", "資訊科技部", 2, "2026-11-02T02:00:00+08:00"),
       person("seed-e", "葉倩雯", "客戶服務部", 2, "2026-11-02T03:00:00+08:00"),
       person("seed-f", "鍾家朗", "工程部", 2, "2026-11-02T04:00:00+08:00"),
-      person("seed-g", "尹思穎", "人事部", 2, "2026-11-03T02:00:00+08:00"),
+      person("seed-g", "尹思穎", "人力資源部", 2, "2026-11-03T02:00:00+08:00"),
       person("seed-h", "施柏宇", "市場部", 2, "2026-11-03T03:00:00+08:00"),
       person("seed-i", "韓樂怡", "財務部", 2, "2026-11-03T04:00:00+08:00"),
       person("seed-j", "方志成", "客戶服務部", 2, "2026-11-04T02:00:00+08:00"),
@@ -852,7 +852,7 @@ const GROUPS: Omit<GroupBuy, "image">[] = [
     title: "新年花卉",
     merchant: "街坊花店",
     summary: "草案：年桔及桃花，待花店確認送貨檔期。",
-    detail: "人事部仍在比較兩個報價。未上架前同事看不到這項團購。",
+    detail: "人力資源部仍在比較兩個報價。未上架前同事看不到這項團購。",
     priceLabel: "HK$128",
     unitLabel: "盆",
     threshold: 25,
@@ -928,7 +928,7 @@ export function resolvePoster(item: { id: string; image?: string; updatedAt?: st
   return ""
 }
 
-const VIEW_DEPTS = ["市場部", "市場部", "市場部", "財務部", "財務部", "客戶服務部", "工程部", "資訊科技部", "人事部"]
+const VIEW_DEPTS = ["市場部", "市場部", "市場部", "財務部", "財務部", "客戶服務部", "工程部", "資訊科技部", "人力資源部"]
 
 function buildViews(today: string): OfferView[] {
   const views: OfferView[] = []

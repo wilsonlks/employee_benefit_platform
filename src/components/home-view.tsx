@@ -37,7 +37,7 @@ export function HomeView() {
         </p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">今日想找哪一類優惠？</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          現有 {visible.length} 項經人事部上架的福利。分類瀏覽，或者直接搜尋商戶、地點和優惠。
+          現有 {visible.length} 項經人力資源部上架的福利。分類瀏覽，或者直接搜尋商戶、地點和優惠。
         </p>
         <form action="/offers" className="mt-5 flex flex-col gap-2 sm:flex-row">
           <label htmlFor="home-search" className="sr-only">

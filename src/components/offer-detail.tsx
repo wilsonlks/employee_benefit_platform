@@ -49,7 +49,7 @@ export function OfferDetail({ id }: { id: string }) {
       <EmptyState
         icon={expired ? Clock : Lock}
         title={expired ? "這項優惠已過期" : "這項優惠尚未上架"}
-        body={expired ? "員工列表已隱藏過期項目。如仍需要，可以請人事部更新有效期。" : "人事部仍在審核。上架之後才會出現在同事的列表。"}
+        body={expired ? "員工列表已隱藏過期項目。如仍需要，可以請人力資源部更新有效期。" : "人力資源部仍在審核。上架之後才會出現在同事的列表。"}
         action={
           <Link href="/offers" className={cn(buttonVariants({ variant: "outline" }), "h-10 px-4")}>
             返回優惠

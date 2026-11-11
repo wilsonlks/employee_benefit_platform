@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     default: "同事福利",
     template: "%s · 同事福利",
   },
-  description: "內部員工福利平台。集中查閱經人事部審核的優惠，並可參與團購報名。",
+  description: "內部員工福利平台。集中查閱經人力資源部審核的優惠，並可參與團購報名。",
   robots: { index: false, follow: false },
 }
 

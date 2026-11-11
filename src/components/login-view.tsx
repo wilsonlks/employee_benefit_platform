@@ -24,7 +24,7 @@ export function LoginView() {
           </p>
           <h1 className="mt-5 text-4xl font-bold leading-tight sm:text-5xl">員工內部福利平台</h1>
           <p className="mt-4 max-w-lg text-lg leading-8 text-emerald-50">
-            醫食住行優惠，集中展示、方便查閱、由人事部把關。讓同事自己找到適合的福利。
+            醫食住行優惠，集中展示、方便查閱、由人力資源部把關。讓同事自己找到適合的福利。
           </p>
           <ul className="mt-8 grid gap-3">
             {POINTS.map((point) => (

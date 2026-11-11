@@ -53,7 +53,7 @@ export function GroupDetail({ id }: { id: string }) {
       <EmptyState
         icon={Lock}
         title="這個團購尚未上架"
-        body="人事部仍在準備。上架之後同事才可以報名。"
+        body="人力資源部仍在準備。上架之後同事才可以報名。"
         action={
           <Link href="/groups" className={cn(buttonVariants({ variant: "outline" }), "h-10 px-4")}>
             返回團購

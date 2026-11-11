@@ -123,7 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push("/saved")}>我的收藏</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/mail")}>內部郵件</DropdownMenuItem>
-                {isPeopleTeam(user.role) ? <DropdownMenuItem onClick={() => router.push("/admin")}>人事部管理</DropdownMenuItem> : null}
+                {isPeopleTeam(user.role) ? <DropdownMenuItem onClick={() => router.push("/admin")}>人力資源部管理</DropdownMenuItem> : null}
                 <DropdownMenuItem
                   onClick={() => {
                     resetDemo()
@@ -151,7 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <footer className="mx-auto hidden max-w-6xl px-4 pb-8 text-xs leading-5 text-muted-foreground md:block">
-        示範原型。商戶、價格及同事姓名均為虛構，資料只保存在這個瀏覽器。正式版本會連接公司帳號，並由人事部審核後上架。
+        示範原型。商戶、價格及同事姓名均為虛構，資料只保存在這個瀏覽器。正式版本會連接公司帳號，並由人力資源部審核後上架。
       </footer>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-white/95 backdrop-blur md:hidden" aria-label="主要">
         <ul className="grid grid-cols-4">

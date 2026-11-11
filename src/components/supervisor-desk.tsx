@@ -59,7 +59,7 @@ export function SupervisorDesk() {
     <div className="grid gap-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">人事部管理後台</h1>
+          <h1 className="text-3xl font-bold text-gray-900">人力資源部管理後台</h1>
           <p className="mt-2 text-gray-500">管理優惠上下架、查看數據與審核提案。</p>
         </div>
         <Link href="/" className={cn(buttonVariants({ variant: "ghost" }), "h-9 px-2 text-[#15803d]")}>
@@ -132,7 +132,7 @@ export function SupervisorDesk() {
                     </Link>
                   </div>
                   <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-gray-500">
-                    <span>提交者：人事部專員 ({offer.submittedByName})</span>
+                    <span>提交者：人力資源部專員 ({offer.submittedByName})</span>
                     <span>{offer.merchant}</span>
                     <span>分類：{categoryById(offer.category)?.name}</span>
                     <span>期限：至 {offer.validUntil}</span>

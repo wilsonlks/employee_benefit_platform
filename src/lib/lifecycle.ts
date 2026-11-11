@@ -1,7 +1,7 @@
 import { addDays, categoryById, daysUntil, formatDay, USERS } from "@/lib/catalog"
 import type { MailMessage, Offer, OfferView } from "@/lib/types"
 
-const VIEW_DEPTS = ["市場部", "市場部", "市場部", "財務部", "財務部", "客戶服務部", "工程部", "資訊科技部", "人事部"]
+const VIEW_DEPTS = ["市場部", "市場部", "市場部", "財務部", "財務部", "客戶服務部", "工程部", "資訊科技部", "人力資源部"]
 
 export function deptFromUser(userId: string) {
   const known = USERS.find((user) => user.id === userId)

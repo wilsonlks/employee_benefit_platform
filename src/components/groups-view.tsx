@@ -21,7 +21,7 @@ export function GroupsView() {
     <div className="grid gap-8">
       <PageHeader
         title="團購"
-        description="人事部設定人數門檻和截止時間。系統會統計報名：達標就成團，截止仍未達標則自動取消。"
+        description="人力資源部設定人數門檻和截止時間。系統會統計報名：達標就成團，截止仍未達標則自動取消。"
       />
       {published.length === 0 ? (
         <EmptyState icon={Users} title="暫時沒有團購" body="新的團購上架之後會出現在這裡。" />
